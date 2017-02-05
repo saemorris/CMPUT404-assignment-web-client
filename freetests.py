@@ -186,7 +186,7 @@ class TestHTTPClient(unittest.TestCase):
 
     def testPOSTHeaders(self):
         '''Test HTTP POST Headers'''
-        MyHTTPHandler.get = post_header_check
+        MyHTTPHandler.post = post_header_check
         http = httpclass.HTTPClient()
         path = "abcdef/gjkd/dsadas"
         url = "http://%s:%d/%s" % (BASEHOST,BASEPORT, path)
@@ -194,9 +194,9 @@ class TestHTTPClient(unittest.TestCase):
         self.assertTrue(req != None, "None Returned!")
         self.assertTrue(req.code == 200)
 
-        
-        
-    # consider disabling this test until everything else works
+       
+       
+   # consider disabling this test until everything else works
     def testInternetGets(self):
         '''Test HTTP Get in the wild, these webservers are far less
            forgiving'''

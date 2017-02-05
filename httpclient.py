@@ -23,6 +23,7 @@ import socket
 import re
 # you may use urllib to encode data appropriately
 import urllib
+import urlparse 
 
 def help():
     print "httpclient.py [GET/POST] [URL]\n"
@@ -32,24 +33,74 @@ class HTTPResponse(object):
         self.code = code
         self.body = body
 
+# create a request object
+class HTTPRequest(object):
+
+    def __init__(self, method, url, args=""):
+
+        # parse the url
+        parsed = urlparse.urlsplit(url) 
+
+        self.method = method
+
+        self.path = parsed.path
+        if not self.path:
+            self.path = "/"
+
+        self.host = parsed.hostname
+
+        self.port = parsed.port
+        if not self.port:
+            self.port = 80
+
+        if args:
+            self.body = urllib.urlencode(args)
+        else:
+            self.body = ""
+
+    def getRequest(self):
+        headers = self.requestHeaders()
+        print "HEADERS: \n" + headers
+        return headers + self.body
+
+    def requestHeaders(self):
+        protocol = "HTTP/1.1"
+
+        first = self.method + " " +  self.path + " " + protocol + "\r\n"
+        host = "Host: " + self.host + ":" + str(self.port) + "\r\n"
+        type = "Content-type: application/x-www-form-urlencoded\r\n"
+        length = "Content-length: " + str(len(self.body)) + "\r\n"
+        accept = "Accept: */*\r\n"
+        close = "Connection: close\r\n"
+
+        return first + host + type + length + accept + close + "\r\n"
+
 class HTTPClient(object):
     #def get_host_port(self,url):
 
     def connect(self, host, port):
-        # use sockets!
-        return None
+
+        # Joshua Campbell, Cmput 404 Lab 2
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((str(host), int(port)))
+
+        return sock
 
     def get_code(self, data):
-        return None
+        code = data.split("\r\n")[0].split(" ")[1]
+        return code
 
     def get_headers(self,data):
         return None
 
     def get_body(self, data):
-        return None
+        body = "" if len(data.split("\r\n\r\n", 1)) == 1 else data.split("\r\n\r\n", 1)[-1]
+
+        return body 
 
     # read everything from the socket
     def recvall(self, sock):
+        print "in recvall"
         buffer = bytearray()
         done = False
         while not done:
@@ -61,14 +112,36 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
-        return HTTPResponse(code, body)
+         # create the request
+        request = HTTPRequest("GET", url, args)
+
+        # open a connection and send the request
+        socket = self.connect(request.host, request.port)
+        socket.sendall(request.getRequest())
+
+        response = self.recvall(socket)
+
+        code = self.get_code(response) 
+        body = self.get_body(response)
+        return HTTPResponse(int(code), body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
-        return HTTPResponse(code, body)
+        request = HTTPRequest("POST", url, args)
+
+        socket = self.connect(request.host, request.port)
+        socket.sendall(request.getRequest())
+
+        response = self.recvall(socket)
+
+        print "------ Response ------"
+
+        print response
+
+        print "------ end response -------"
+
+        code = self.get_code(response)
+        body = self.get_body(response)
+        return HTTPResponse(int(code), body)
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
