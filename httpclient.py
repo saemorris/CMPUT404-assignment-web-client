@@ -60,7 +60,6 @@ class HTTPRequest(object):
 
     def getRequest(self):
         headers = self.requestHeaders()
-        print "HEADERS: \n" + headers
         return headers + self.body
 
     def requestHeaders(self):
@@ -100,7 +99,6 @@ class HTTPClient(object):
 
     # read everything from the socket
     def recvall(self, sock):
-        print "in recvall"
         buffer = bytearray()
         done = False
         while not done:
@@ -132,12 +130,6 @@ class HTTPClient(object):
         socket.sendall(request.getRequest())
 
         response = self.recvall(socket)
-
-        print "------ Response ------"
-
-        print response
-
-        print "------ end response -------"
 
         code = self.get_code(response)
         body = self.get_body(response)
